@@ -6,6 +6,7 @@
 #include <nlohmann-json/json.hpp>
 
 #include <Poco/Net/HTTPClientSession.h>
+#include <Poco/Logger.h>
 
 enum class ServerResponse {
     OK = 0,
@@ -27,4 +28,6 @@ private:
 
     std::unique_ptr<Poco::Net::HTTPClientSession> _session;
     int _sessionTimeoutMs;
+
+    Poco::Logger& _logger;
 };

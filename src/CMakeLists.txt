@@ -29,6 +29,9 @@ add_library(
         types/api/StatusResponse.h
         types/api/StatusResponse.cpp
         types/api/TaskItem.h
+
+        types/enums/CommandType.h
+        types/enums/TaskFrequency.h
 )
 
 set_target_properties(

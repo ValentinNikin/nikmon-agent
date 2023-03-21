@@ -1,5 +1,9 @@
 #include "CommunicationModule.h"
 
+#include <Poco/Environment.h>
+#include <Poco/Net/IPAddress.h>
+#include <Poco/Net/NetworkInterface.h>
+
 #include <nlohmann-json/json.hpp>
 
 #include "types/api/RegistrationRequest.h"
@@ -40,42 +44,17 @@ void CommunicationModule::threadFunc() {
             }
         }
         catch (const std::exception& exception) {
-            // TODO: print something to log
+            _logger.error("An exception occurred while executing a request to the server, what: %s", std::string(exception.what()));
         }
     }
 }
 
 bool CommunicationModule::start() {
-    // TODO: extract from config parameters for client
-
-    std::string host;
-    if (_configurationModule->hasKey("ServerHost")) {
-        host = _configurationModule->getString("ServerHost");
-    }
-    else {
-        _logger.error("Unable to extract \"ServerHost\" parameter from config");
+    if (!init()) {
         return false;
     }
 
-    int port;
-    if (_configurationModule->hasKey("Port")) {
-        port = _configurationModule->getInt("Port");
-    }
-    else {
-        _logger.error("Unable to extract \"Port\" parameter from config");
-        return false;
-    }
-
-    int sessionTimeoutMs = 30000;
-    if (_configurationModule->hasKey("SessionTimeoutMs")) {
-        sessionTimeoutMs = _configurationModule->getInt("SessionTimeoutMs");
-    }
-    else {
-        _logger.error("Unable to extract \"SessionTimeoutMs\" parameter from config");
-        return false;
-    }
-
-    _client = std::make_unique<Client>(host, port, sessionTimeoutMs);
+    _client = std::make_unique<Client>(_confParams.serverHost, _confParams.serverPort, _confParams.sessionTimeoutMs);
 
     _thread = std::thread(&CommunicationModule::threadFunc, this);
 
@@ -86,11 +65,67 @@ void CommunicationModule::stop() {
     _isOkToContinue = false;
 }
 
+bool CommunicationModule::init() {
+    if (_configurationModule->hasKey("ServerHost")) {
+        _confParams.serverHost = _configurationModule->getString("ServerHost");
+    }
+    else {
+        _logger.error("Unable to extract \"ServerHost\" parameter from config");
+        return false;
+    }
+
+    if (_configurationModule->hasKey("Port")) {
+        _confParams.serverPort = _configurationModule->getInt("Port");
+    }
+    else {
+        _logger.error("Unable to extract \"Port\" parameter from config");
+        return false;
+    }
+
+    if (_configurationModule->hasKey("SessionTimeoutMs")) {
+        _confParams.sessionTimeoutMs = _configurationModule->getInt("SessionTimeoutMs");
+    }
+    else {
+        _logger.error("Unable to extract \"SessionTimeoutMs\" parameter from config");
+        return false;
+    }
+
+    if (_configurationModule->hasKey("NetworkInterface")) {
+        _confParams.networkInterface = _configurationModule->getInt("NetworkInterface");
+    }
+    else {
+        _logger.error("Unable to extract \"NetworkInterface\" parameter from config");
+        return false;
+    }
+
+    return true;
+}
+
+namespace {
+    bool extractLocalIp(Poco::Net::IPAddress& ipAddress, const std::string& interface) {
+        auto interfaces = Poco::Net::NetworkInterface::list(1, 1);
+
+        for (const auto& i : interfaces) {
+            if (i.displayName() == interface && i.address().family() == Poco::Net::IPAddress::Family::IPv4 && !i.isLoopback()) {
+                ipAddress = i.address();
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
 void CommunicationModule::processRegisterRequest() {
+    Poco::Net::IPAddress ipAddress;
+    if (!extractLocalIp(ipAddress, _confParams.networkInterface)) {
+        _logger.error("Unable to extract local IP Address");
+        return;
+    }
+
     RegistrationRequest request;
-    // TODO: extract parameters from system
-    request.ip = "";
-    request.machineName = "";
+    request.ip = ipAddress.toString();
+    request.machineName = Poco::Environment::nodeName();
 
     nlohmann::json requestJson;
     nlohmann::json responseJson;
@@ -106,8 +141,10 @@ void CommunicationModule::processRegisterRequest() {
         _heartbeat = response.heartbeat;
     }
     else {
-        // TODO: print something to log
+        _logger.error("Unable to execute registration request");
     }
+
+    _isRegistered = res == ServerResponse::OK;
 }
 
 void CommunicationModule::processStatusRequest() {
@@ -120,14 +157,14 @@ void CommunicationModule::processStatusRequest() {
 
     to_json(requestJson, request);
 
-    auto res = _client->postRequest(REGISTRATION_QUERY, requestJson, responseJson);
+    auto res = _client->postRequest(STATUS_QUERY, requestJson, responseJson);
     if (res == ServerResponse::OK) {
         StatusResponse response;
         from_json(responseJson, response);
 
-
+        // TODO: process response
     }
     else {
-        // TODO: print something to log
+        _logger.error("Unable to execute status request");
     }
 }

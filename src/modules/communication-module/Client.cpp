@@ -9,7 +9,8 @@
 #include <Poco/StreamCopier.h>
 
 Client::Client(const std::string& host, const int port, const int sessionTimeoutMs)
-    : _host(host), _port(port), _sessionTimeoutMs(sessionTimeoutMs) {}
+    : _host(host), _port(port), _sessionTimeoutMs(sessionTimeoutMs),
+      _logger(Poco::Logger::get("Client")) {}
 
 ServerResponse Client::postRequest(const std::string& uri, const nlohmann::json& requestJson, nlohmann::json& responseJson) {
     if (!_session) {
@@ -29,25 +30,25 @@ ServerResponse Client::postRequest(const std::string& uri, const nlohmann::json&
         _session->sendRequest(request) << requestBodyString;
     }
     catch (Poco::TimeoutException & ex) {
-//        LOG_ERROR("HTTP Timeout connection error");
+        _logger.error("HTTP Timeout connection error");
         return ServerResponse::TIMED_OUT;
     } catch (Poco::Net::ConnectionRefusedException & ex) {
-//        LOG_ERROR("Connection has been refused");
+        _logger.error("Connection has been refused");
         return ServerResponse::NETWORK_ERROR;
     } catch (Poco::Net::ConnectionResetException & ex) {
-//        LOG_ERROR("Connection has been reset");
+        _logger.error("Connection has been reset");
         return ServerResponse::NETWORK_ERROR;
     } catch (Poco::Net::ConnectionAbortedException & ex) {
-//        LOG_ERROR("Connection has been aborted");
+        _logger.error("Connection has been aborted");
         return ServerResponse::NETWORK_ERROR;
     } catch (Poco::Net::SSLException & ex) {
-//        LOG_ERROR("SSL exception. Error msg: %s",ex.message());
+        _logger.error("SSL exception. Error msg: %s",ex.message());
         return ServerResponse::NETWORK_ERROR;
     } catch (Poco::IOException & ex) {
-//        LOG_ERROR("IO Exception: %s", std::string(ex.what()) );
+        _logger.error("IO Exception: %s", std::string(ex.what()) );
         return ServerResponse::NETWORK_ERROR;
     } catch (Poco::InvalidArgumentException & ex) {
-//        LOG_ERROR("Invalid argument: %s", std::string(ex.what()) );
+        _logger.error("Invalid argument: %s", std::string(ex.what()) );
         return ServerResponse::NETWORK_ERROR;
     }
     catch (...) {
@@ -60,8 +61,8 @@ ServerResponse Client::postRequest(const std::string& uri, const nlohmann::json&
         Poco::StreamCopier::copyStream(_session->receiveResponse(response), ss);
     }
     catch (Poco::Exception &ex) {
-//        LOG_ERROR("Unable to receive response from control server: %s, %s",
-//                  std::string(ex.what()), ex.displayText());
+        _logger.error("Unable to receive response from control server: %s, %s",
+                  std::string(ex.what()), ex.displayText());
         return ServerResponse::UNKNOWN;
     }
 
@@ -72,13 +73,13 @@ ServerResponse Client::postRequest(const std::string& uri, const nlohmann::json&
             return ServerResponse::OK;
         }
         case 401:
-//            LOG_ERROR("Agent needs authorization: %d", responseStatus);
+            _logger.error("Agent needs authorization: %d", responseStatus);
             return ServerResponse::UNAUTHORIZED;
         case 500:
-//            LOG_ERROR("Internal server error: %d", responseStatus);
+            _logger.error("Internal server error: %d", responseStatus);
             return ServerResponse::INTERNAL_SERVER_ERROR;
         default:
-//            LOG_ERROR("Unknown status: %d", responseStatus);
+            _logger.error("Unknown status: %d", responseStatus);
             return ServerResponse::UNKNOWN;
     }
 

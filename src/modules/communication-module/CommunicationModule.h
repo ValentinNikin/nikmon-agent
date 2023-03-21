@@ -19,12 +19,24 @@ public:
     void stop();
 private:
 
+    struct ConfParams {
+        std::string serverHost;
+        int serverPort;
+        int sessionTimeoutMs;
+        std::string networkInterface;
+    };
+
+    ConfParams _confParams;
+
+    bool init();
+
     std::shared_ptr<ConfigurationModule> _configurationModule;
 
     void processRegisterRequest();
     void processStatusRequest();
     bool _isRegistered = false;
     std::string _agentId = "";
+
 
 
     void threadFunc();

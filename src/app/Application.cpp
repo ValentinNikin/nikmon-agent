@@ -1,9 +1,11 @@
 #include "Application.h"
 
 #include <Poco/Util/LoggingConfigurator.h>
+#include <Poco/Path.h>
 
 #include "app/ServiceLocator.h"
 #include "modules/ConfigurationModule.h"
+#include "modules/communication-module/CommunicationModule.h"
 
 namespace {
     Poco::Path getProjectConfigurationsPath() {
@@ -24,6 +26,13 @@ Application::Application()
 
 int Application::main(const std::vector<std::string>&) {
     if (!init()) {
+        return Poco::Util::ServerApplication::EXIT_SOFTWARE;
+    }
+
+    auto communicationModule = ServiceLocator::getInstance()->resolve<CommunicationModule>();
+
+    if (!communicationModule->start()) {
+        _logger.fatal("Unable to start communication module");
         return Poco::Util::ServerApplication::EXIT_SOFTWARE;
     }
 
