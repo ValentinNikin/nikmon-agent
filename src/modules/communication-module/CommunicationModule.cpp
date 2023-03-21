@@ -17,11 +17,15 @@ using namespace nikmon::types;
 #define STATUS_QUERY "/api/agent/status"
 
 CommunicationModule::CommunicationModule(
-    const std::shared_ptr<ConfigurationModule>& configurationModule)
+    const std::shared_ptr<ConfigurationModule>& configurationModule,
+    const std::shared_ptr<TaskManagerModule>& taskManagerModule)
     : _configurationModule(configurationModule),
+    _taskManagerModule(taskManagerModule),
     _logger(Poco::Logger::get("CommunicationModule")) {}
 
 CommunicationModule::~CommunicationModule() {
+    stop();
+
     if (_thread.joinable()) {
         _thread.join();
     }
@@ -150,7 +154,8 @@ void CommunicationModule::processRegisterRequest() {
 void CommunicationModule::processStatusRequest() {
     StatusRequest request;
     request.id = _agentId;
-    // TODO: fill other fields
+    request.confirmations = _taskManagerModule->getConfirmations();
+    request.items = _taskManagerModule->getTaskItems();
 
     nlohmann::json requestJson;
     nlohmann::json responseJson;
@@ -162,7 +167,7 @@ void CommunicationModule::processStatusRequest() {
         StatusResponse response;
         from_json(responseJson, response);
 
-        // TODO: process response
+        _taskManagerModule->addCommands(std::move(response.commands));
     }
     else {
         _logger.error("Unable to execute status request");

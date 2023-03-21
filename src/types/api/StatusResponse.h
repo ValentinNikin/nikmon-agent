@@ -14,7 +14,6 @@ struct StatusResponse {
     std::vector<std::unique_ptr<Command>> commands;
 };
 
-void to_json(nlohmann::json &j, const StatusResponse &response);
 void from_json(nlohmann::json &j, StatusResponse &response);
 
 }

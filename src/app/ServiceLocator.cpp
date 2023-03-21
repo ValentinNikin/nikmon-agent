@@ -2,6 +2,7 @@
 
 #include "modules/communication-module/CommunicationModule.h"
 #include "modules/ConfigurationModule.h"
+#include "modules/task-manager-module/TaskManagerModule.h"
 
 std::unique_ptr<ServiceLocator> ServiceLocator::_instance = nullptr;
 
@@ -19,6 +20,7 @@ void ServiceLocator::init() {
 
     builder.registerType<CommunicationModule>().singleInstance();
     builder.registerType<ConfigurationModule>().singleInstance();
+    builder.registerType<TaskManagerModule>().singleInstance();
 
     _container = builder.build();
 }

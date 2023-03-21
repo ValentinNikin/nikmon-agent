@@ -19,6 +19,8 @@ add_library(
         modules/communication-module/CommunicationModule.cpp
         modules/ConfigurationModule.h
         modules/ConfigurationModule.cpp
+        modules/task-manager-module/TaskManagerModule.h
+        modules/task-manager-module/TaskManagerModule.cpp
 
         types/api/Command.h
         types/api/Command.cpp
@@ -26,12 +28,15 @@ add_library(
         types/api/RegistrationRequest.h
         types/api/RegistrationResponse.h
         types/api/StatusRequest.h
+        types/api/StatusRequest.cpp
         types/api/StatusResponse.h
         types/api/StatusResponse.cpp
         types/api/TaskItem.h
 
         types/enums/CommandType.h
         types/enums/TaskFrequency.h
+
+        utils/SyncQueue.h
 )
 
 set_target_properties(

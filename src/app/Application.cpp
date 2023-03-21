@@ -29,8 +29,13 @@ int Application::main(const std::vector<std::string>&) {
         return Poco::Util::ServerApplication::EXIT_SOFTWARE;
     }
 
-    auto communicationModule = ServiceLocator::getInstance()->resolve<CommunicationModule>();
+    auto taskManagerModule = ServiceLocator::getInstance()->resolve<TaskManagerModule>();
+    if (!taskManagerModule->start()) {
+        _logger.fatal("Unable to start task manager module");
+        return Poco::Util::ServerApplication::EXIT_SOFTWARE;
+    }
 
+    auto communicationModule = ServiceLocator::getInstance()->resolve<CommunicationModule>();
     if (!communicationModule->start()) {
         _logger.fatal("Unable to start communication module");
         return Poco::Util::ServerApplication::EXIT_SOFTWARE;

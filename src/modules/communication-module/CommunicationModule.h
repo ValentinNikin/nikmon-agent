@@ -9,10 +9,13 @@
 
 #include "Client.h"
 #include "modules/ConfigurationModule.h"
+#include "modules/task-manager-module/TaskManagerModule.h"
 
 class CommunicationModule {
 public:
-    CommunicationModule(const std::shared_ptr<ConfigurationModule>& configurationModule);
+    CommunicationModule(
+            const std::shared_ptr<ConfigurationModule>& configurationModule,
+            const std::shared_ptr<TaskManagerModule>& taskManagerModule);
     ~CommunicationModule();
 
     bool start();
@@ -31,6 +34,7 @@ private:
     bool init();
 
     std::shared_ptr<ConfigurationModule> _configurationModule;
+    std::shared_ptr<TaskManagerModule> _taskManagerModule;
 
     void processRegisterRequest();
     void processStatusRequest();
