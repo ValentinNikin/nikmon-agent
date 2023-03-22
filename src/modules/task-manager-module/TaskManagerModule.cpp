@@ -1,9 +1,14 @@
 #include "TaskManagerModule.h"
 
-TaskManagerModule::TaskManagerModule()
+#include "SingleUseTask.h"
+#include "PeriodicTask.h"
+
+TaskManagerModule::TaskManagerModule(const std::shared_ptr<ExtractorFactory>& extractorFactory)
     : _commandsQueue(std::make_unique<CommandsQueue>()),
       _commandConfirmationsQueue(std::make_unique<CommandConfirmationsQueue>()),
-      _taskItemsQueue(std::make_unique<TaskItemsQueue>()) {}
+      _taskItemsQueue(std::make_unique<TaskItemsQueue>()),
+      _extractorsFactory(extractorFactory),
+      _logger(Poco::Logger::get("TaskManagerModule")) {}
 
 TaskManagerModule::~TaskManagerModule() {
     stop();
@@ -33,6 +38,37 @@ void TaskManagerModule::threadFunc() {
         }
 
         auto commands = _commandsQueue->getAll();
+        for (const auto& c : commands) {
+            switch (c->type) {
+                case CommandType::Add: {
+                    auto extractor = _extractorsFactory->buildExtractor(c->payload.key);
+
+                    std::unique_ptr<Task> task;
+                    if (c->payload.frequency == TaskFrequency::OnceTime) {
+                        task = std::make_unique<SingleUseTask>(c->taskId, std::move(extractor));
+                    }
+                    else if (c->payload.frequency == TaskFrequency::MultipleTimes) {
+                        task = std::make_unique<PeriodicTask>(c->taskId, std::move(extractor), c->payload.delay);
+                    }
+
+                    task->start();
+                    _tasks.push_back(std::move(task));
+
+                    _commandConfirmationsQueue->insert(nikmon::types::CommandConfirmation(c->taskId, c->type));
+
+                    break;
+                }
+                case CommandType::Change: {
+                    break;
+                }
+                case CommandType::Cancel: {
+                    break;
+                }
+                default: {
+                    _logger.error("Unknown command type: %d", static_cast<int>(c->type));
+                }
+            }
+        }
     }
 }
 

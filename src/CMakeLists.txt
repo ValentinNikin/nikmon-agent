@@ -21,10 +21,17 @@ add_library(
         modules/ConfigurationModule.cpp
         modules/task-manager-module/TaskManagerModule.h
         modules/task-manager-module/TaskManagerModule.cpp
+        modules/task-manager-module/Task.h
+        modules/task-manager-module/Task.cpp
+        modules/task-manager-module/PeriodicTask.h
+        modules/task-manager-module/PeriodicTask.cpp
+        modules/task-manager-module/SingleUseTask.h
+        modules/task-manager-module/SingleUseTask.cpp
 
         types/api/Command.h
         types/api/Command.cpp
         types/api/CommandConfirmation.h
+        types/api/CommandConfirmation.cpp
         types/api/RegistrationRequest.h
         types/api/RegistrationResponse.h
         types/api/StatusRequest.h

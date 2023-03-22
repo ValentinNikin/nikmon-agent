@@ -13,7 +13,7 @@ namespace types {
 
 struct Payload {
     TaskFrequency frequency;
-    long int delay;
+    long delay;
     std::string key;
 };
 

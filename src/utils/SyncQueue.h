@@ -7,7 +7,7 @@
 template<typename ItemType>
 class SyncQueue {
 public:
-    void insert(const ItemType& item);
+    void insert(ItemType&& item);
     void insertRange(std::vector<ItemType>&& items);
 
     std::vector<ItemType> getAll();
@@ -20,9 +20,9 @@ private:
 };
 
 template<typename ItemType>
-void SyncQueue<ItemType>::insert(const ItemType& item) {
+void SyncQueue<ItemType>::insert(ItemType&& item) {
     std::lock_guard<std::mutex> lg(_mutex);
-    _queue.push_back(item);
+    _queue.push_back(std::move(item));
 }
 
 template<typename ItemType>
