@@ -1,7 +1,6 @@
 #
 # Hypodermic_FOUND
 # Hypodermic_INCLUDE_DIRS
-# Hypodermic_LIBRARIES
 
 set(Hypodermic_FOUND FALSE)
 

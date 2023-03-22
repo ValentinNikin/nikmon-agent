@@ -9,6 +9,9 @@ list(APPEND PROJECT_DEPS ${CMAKE_THREAD_LIBS_INIT})
 find_package(Hypodermic REQUIRED)
 list(APPEND PROJECT_DEPS_INCLUDES ${Hypodermic_INCLUDE_DIRS})
 
+find_package(NlohmannJson REQUIRED)
+list(APPEND PROJECT_DEPS_INCLUDES ${NlohmannJson_INCLUDE_DIRS})
+
 find_package(Poco REQUIRED Foundation Util JSON Net NetSSL Data)
 list(APPEND PROJECT_DEPS_INCLUDES ${Poco_INCLUDE_DIRS})
 list(APPEND PROJECT_DEPS ${Poco_LIBRARIES})

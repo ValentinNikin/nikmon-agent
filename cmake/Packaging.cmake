@@ -1,6 +1,6 @@
-set(CPACK_PACKAGE_NAME "fashio_mnist")
+set(CPACK_PACKAGE_NAME "nikmon-agent")
 set(CPACK_PACKAGE_VENDOR "Nikin Valentin")
-set(CPACK_PACKAGE_DESCRIPTION "Home work #13 (OTUS C++ DEVELOPER PROFESSIONAL)")
+set(CPACK_PACKAGE_DESCRIPTION "Agent for Nikin Monitoring service")
 set(CPACK_PACKAGE_CONTACT "nikin_valentin@mail.ru")
 
 set(CPACK_PACKAGE_VERSION_MAJOR "${MAJOR_VERSION}")
