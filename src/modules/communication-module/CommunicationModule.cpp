@@ -23,52 +23,6 @@ CommunicationModule::CommunicationModule(
     _taskManagerModule(taskManagerModule),
     _logger(Poco::Logger::get("CommunicationModule")) {}
 
-CommunicationModule::~CommunicationModule() {
-    stop();
-
-    if (_thread.joinable()) {
-        _thread.join();
-    }
-}
-
-void CommunicationModule::threadFunc() {
-    while (_isOkToContinue) {
-        std::unique_lock<std::mutex> lg(_mutex);
-        _condVariable.wait_for(lg, std::chrono::milliseconds(_heartbeat));
-
-        if (!_isOkToContinue) {
-            return;
-        }
-
-        try {
-            if (!_isRegistered) {
-                processRegisterRequest();
-            } else {
-                processStatusRequest();
-            }
-        }
-        catch (const std::exception& exception) {
-            _logger.error("An exception occurred while executing a request to the server, what: %s", std::string(exception.what()));
-        }
-    }
-}
-
-bool CommunicationModule::start() {
-    if (!init()) {
-        return false;
-    }
-
-    _client = std::make_unique<Client>(_confParams.serverHost, _confParams.serverPort, _confParams.sessionTimeoutMs);
-
-    _thread = std::thread(&CommunicationModule::threadFunc, this);
-
-    return true;
-}
-
-void CommunicationModule::stop() {
-    _isOkToContinue = false;
-}
-
 bool CommunicationModule::init() {
     if (_configurationModule->hasKey("ServerHost")) {
         _confParams.serverHost = _configurationModule->getString("ServerHost");
@@ -102,7 +56,22 @@ bool CommunicationModule::init() {
         return false;
     }
 
+    _client = std::make_unique<Client>(_confParams.serverHost, _confParams.serverPort, _confParams.sessionTimeoutMs);
+
     return true;
+}
+
+void CommunicationModule::execute() {
+    try {
+        if (!_isRegistered) {
+            processRegisterRequest();
+        } else {
+            processStatusRequest();
+        }
+    }
+    catch (const std::exception& exception) {
+        _logger.error("An exception occurred while executing a request to the server, what: %s", std::string(exception.what()));
+    }
 }
 
 namespace {
@@ -142,7 +111,8 @@ void CommunicationModule::processRegisterRequest() {
         from_json(responseJson, response);
 
         _agentId = response.id;
-        _heartbeat = response.heartbeat;
+
+        changeHeartbeat(response.heartbeat);
     }
     else {
         _logger.error("Unable to execute registration request");
@@ -154,8 +124,8 @@ void CommunicationModule::processRegisterRequest() {
 void CommunicationModule::processStatusRequest() {
     StatusRequest request;
     request.id = _agentId;
-    request.confirmations = _taskManagerModule->getConfirmations();
-    request.items = _taskManagerModule->getTaskItems();
+    request.confirmations = _taskManagerModule->commandsConfirmationsQueue()->getAll();
+    request.items = _taskManagerModule->taskItemsQueue()->getAll();
 
     nlohmann::json requestJson;
     nlohmann::json responseJson;
@@ -167,7 +137,7 @@ void CommunicationModule::processStatusRequest() {
         StatusResponse response;
         from_json(responseJson, response);
 
-        _taskManagerModule->addCommands(std::move(response.commands));
+        _taskManagerModule->commandsQueue()->insertRange(std::move(response.commands));
     }
     else {
         _logger.error("Unable to execute status request");

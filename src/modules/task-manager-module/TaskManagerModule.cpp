@@ -3,83 +3,123 @@
 #include "SingleUseTask.h"
 #include "PeriodicTask.h"
 
+using Command = nikmon::types::Command;
+using CommandConfirmation = nikmon::types::CommandConfirmation;
+using TaskItem = nikmon::types::TaskItem;
+
 TaskManagerModule::TaskManagerModule(const std::shared_ptr<ExtractorFactory>& extractorFactory)
-    : _commandsQueue(std::make_unique<CommandsQueue>()),
-      _commandConfirmationsQueue(std::make_unique<CommandConfirmationsQueue>()),
-      _taskItemsQueue(std::make_unique<TaskItemsQueue>()),
+    : _commandsQueue(std::make_unique<SyncQueue<std::unique_ptr<Command>>>()),
+      _commandConfirmationsQueue(std::make_unique<SyncQueue<CommandConfirmation>>()),
+      _taskItemsQueue(std::make_unique<SyncQueue<std::unique_ptr<TaskItem>>>()),
       _extractorsFactory(extractorFactory),
-      _logger(Poco::Logger::get("TaskManagerModule")) {}
-
-TaskManagerModule::~TaskManagerModule() {
-    stop();
-
-    if (_thread.joinable()) {
-        _thread.join();
-    }
+      _logger(Poco::Logger::get("TaskManagerModule")) {
+    changeHeartbeat(3000);
 }
 
-bool TaskManagerModule::start() {
-    _thread = std::thread(&TaskManagerModule::threadFunc, this);
+void TaskManagerModule::execute() {
+    // process commands from server
+    auto commands = _commandsQueue->getAll();
+    for (const auto& c : commands) {
+        nikmon::types::CommandConfirmation confirmation;
+        switch (c->type) {
+            case CommandType::Add: {
+                auto extractor = _extractorsFactory->buildExtractor(c->payload.key);
+                if (extractor == nullptr) {
+                    _logger.warning("Unable to apply 'Add' command. Unable to create extractor for key: %s", c->payload.key);
+                    confirmation = nikmon::types::CommandConfirmation(
+                            c->taskId, c->type, false, "Unable to create extractor");
+                    break;
+                }
 
-    return true;
-}
+                std::unique_ptr<Task> task;
+                if (c->payload.frequency == TaskFrequency::OnceTime) {
+                    task = std::make_unique<SingleUseTask>(c->taskId, std::move(extractor));
+                }
+                else if (c->payload.frequency == TaskFrequency::MultipleTimes) {
+                    task = std::make_unique<PeriodicTask>(c->taskId, std::move(extractor), c->payload.delay);
+                }
 
-void TaskManagerModule::stop() {
-    _isOkToContinue = false;
-}
+                task->start();
+                _tasks.push_back(std::move(task));
 
-void TaskManagerModule::threadFunc() {
-    while (_isOkToContinue) {
-        std::unique_lock<std::mutex> lg(_mutex);
-        _condVariable.wait_for(lg, std::chrono::milliseconds(_heartbeat));
+                confirmation = nikmon::types::CommandConfirmation(c->taskId, c->type);
 
-        if (!_isOkToContinue) {
-            return;
-        }
+                break;
+            }
+            case CommandType::Change: {
+                auto taskIt = std::find_if(_tasks.begin(), _tasks.end(), [&c](const auto& task) {
+                    return task->getId() == c->taskId;
+                });
 
-        auto commands = _commandsQueue->getAll();
-        for (const auto& c : commands) {
-            switch (c->type) {
-                case CommandType::Add: {
-                    auto extractor = _extractorsFactory->buildExtractor(c->payload.key);
-
-                    std::unique_ptr<Task> task;
-                    if (c->payload.frequency == TaskFrequency::OnceTime) {
-                        task = std::make_unique<SingleUseTask>(c->taskId, std::move(extractor));
+                if (taskIt != _tasks.end()) {
+                    if (auto periodicTask = dynamic_cast<PeriodicTask*>(taskIt->get())) {
+                        if (c->payload.key != periodicTask->getKey()) {
+                            periodicTask->setExtractor(_extractorsFactory->buildExtractor(c->payload.key));
+                        }
+                        periodicTask->setDelay(c->payload.delay);
+                        confirmation = nikmon::types::CommandConfirmation(c->taskId, c->type);
                     }
-                    else if (c->payload.frequency == TaskFrequency::MultipleTimes) {
-                        task = std::make_unique<PeriodicTask>(c->taskId, std::move(extractor), c->payload.delay);
+                    else {
+                        _logger.warning("Unable to apply 'Change' command. 'Change' command supporting only by 'MultipleTimes' tasks");
+                        confirmation = nikmon::types::CommandConfirmation(
+                                c->taskId, c->type, false, "'Change' command supporting only by 'MultipleTimes' tasks");
                     }
+                }
+                else {
+                    _logger.warning("Unable to apply 'Change' command. Task with id " + c->taskId + " not found");
+                    confirmation = nikmon::types::CommandConfirmation(
+                            c->taskId, c->type, false, "Task with id " + c->taskId + " not found");
+                }
 
-                    task->start();
-                    _tasks.push_back(std::move(task));
+                break;
+            }
+            case CommandType::Cancel: {
+                auto taskIt = std::find_if(_tasks.begin(), _tasks.end(), [&c](const auto& task) {
+                    return task->getId() == c->taskId;
+                });
 
-                    _commandConfirmationsQueue->insert(nikmon::types::CommandConfirmation(c->taskId, c->type));
+                if (taskIt != _tasks.end()) {
+                    taskIt->get()->stop();
+                    _tasks.erase(taskIt);
+                    confirmation = nikmon::types::CommandConfirmation(c->taskId, c->type);
+                }
+                else {
+                    _logger.warning("Unable to apply 'Cancel' command. Task with id " + c->taskId + " not found");
+                    confirmation = nikmon::types::CommandConfirmation(
+                            c->taskId, c->type, false, "Task with id " + c->taskId + " not found");
+                }
 
-                    break;
-                }
-                case CommandType::Change: {
-                    break;
-                }
-                case CommandType::Cancel: {
-                    break;
-                }
-                default: {
-                    _logger.error("Unknown command type: %d", static_cast<int>(c->type));
-                }
+                break;
+            }
+            default: {
+                confirmation = nikmon::types::CommandConfirmation(
+                        c->taskId, c->type, false, "Unknown command type");
+                _logger.error("Unknown command type: %d", static_cast<int>(c->type));
             }
         }
+
+        _commandConfirmationsQueue->insert(std::move(confirmation));
+    }
+
+    for (auto it = _tasks.begin(); it != _tasks.end(); it++) {
+        // collect items from task
+        _taskItemsQueue->insertRange(it->get()->readyItemsQueue()->getAll());
+
+        // remove task from list if it is finished
+        if (it->get()->isFinished()) {
+            it = _tasks.erase(it);
+        }
     }
 }
 
-std::vector<nikmon::types::CommandConfirmation> TaskManagerModule::getConfirmations() {
-    return _commandConfirmationsQueue->getAll();
+WriteSyncQueue<std::unique_ptr<Command>>* TaskManagerModule::commandsQueue() {
+    return _commandsQueue.get();
 }
 
-std::vector<TaskManagerModule::TaskItemPtr> TaskManagerModule::getTaskItems() {
-    return _taskItemsQueue->getAll();
+ReadSyncQueue<CommandConfirmation>* TaskManagerModule::commandsConfirmationsQueue() {
+    return _commandConfirmationsQueue.get();
 }
 
-void TaskManagerModule::addCommands(std::vector<CommandPtr>&& commands) {
-    _commandsQueue->insertRange(std::move(commands));
+ReadSyncQueue<std::unique_ptr<TaskItem>>* TaskManagerModule::taskItemsQueue() {
+    return _taskItemsQueue.get();
 }

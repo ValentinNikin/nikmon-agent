@@ -3,7 +3,7 @@
 Task::Task(const std::string& id, std::unique_ptr<Extractor> extractor)
     : _id(id),
     _extractor(std::move(extractor)),
-    _itemsQueue(std::make_unique<TaskItemsQueue>()) {}
+    _itemsQueue(std::make_unique<SyncQueue<std::unique_ptr<TaskItem>>>()) {}
 
 Task::~Task() {
     stop();
@@ -25,7 +25,15 @@ bool Task::isFinished() const {
     return _isFinished;
 }
 
-Task::TaskItemsQueue* Task::readyItemsQueue() {
+std::string Task::getId() const {
+    return _id;
+}
+
+std::string Task::getKey() const {
+    return _extractor->getKey();
+}
+
+ReadSyncQueue<std::unique_ptr<nikmon::types::TaskItem>>* Task::readyItemsQueue() {
     return _itemsQueue.get();
 }
 

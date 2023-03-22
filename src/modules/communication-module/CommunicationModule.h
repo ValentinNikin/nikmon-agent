@@ -8,20 +8,20 @@
 #include <Poco/Logger.h>
 
 #include "Client.h"
-#include "modules/ConfigurationModule.h"
+#include "modules/ThreadedModule.h"
+#include "modules/configuration-module/ConfigurationModule.h"
 #include "modules/task-manager-module/TaskManagerModule.h"
 
-class CommunicationModule {
+class CommunicationModule : public ThreadedModule {
 public:
     CommunicationModule(
             const std::shared_ptr<ConfigurationModule>& configurationModule,
             const std::shared_ptr<TaskManagerModule>& taskManagerModule);
-    ~CommunicationModule();
 
-    bool start();
-    void stop();
+    bool init();
 private:
-
+    void execute() override;
+private:
     struct ConfParams {
         std::string serverHost;
         int serverPort;
@@ -31,27 +31,15 @@ private:
 
     ConfParams _confParams;
 
-    bool init();
-
     std::shared_ptr<ConfigurationModule> _configurationModule;
-    std::shared_ptr<TaskManagerModule> _taskManagerModule;
-
+private:
     void processRegisterRequest();
     void processStatusRequest();
+private:
+    std::shared_ptr<TaskManagerModule> _taskManagerModule;
+
     bool _isRegistered = false;
     std::string _agentId = "";
-
-
-
-    void threadFunc();
-    std::thread _thread;
-
-    std::atomic_bool _isOkToContinue;
-
-    int _heartbeat;
-    std::condition_variable _condVariable;
-    std::mutex _mutex;
-
     std::unique_ptr<Client> _client;
 
     Poco::Logger& _logger;

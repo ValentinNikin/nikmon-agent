@@ -4,7 +4,7 @@
 #include <Poco/Path.h>
 
 #include "app/ServiceLocator.h"
-#include "modules/ConfigurationModule.h"
+#include "modules/configuration-module/ConfigurationModule.h"
 #include "modules/communication-module/CommunicationModule.h"
 
 namespace {
@@ -30,16 +30,14 @@ int Application::main(const std::vector<std::string>&) {
     }
 
     auto taskManagerModule = ServiceLocator::getInstance()->resolve<TaskManagerModule>();
-    if (!taskManagerModule->start()) {
-        _logger.fatal("Unable to start task manager module");
-        return Poco::Util::ServerApplication::EXIT_SOFTWARE;
-    }
+    taskManagerModule->start();
 
     auto communicationModule = ServiceLocator::getInstance()->resolve<CommunicationModule>();
-    if (!communicationModule->start()) {
+    if (!communicationModule->init()) {
         _logger.fatal("Unable to start communication module");
         return Poco::Util::ServerApplication::EXIT_SOFTWARE;
     }
+    communicationModule->start();
 
     waitForTerminationRequest();
 

@@ -5,17 +5,32 @@
 #include <mutex>
 
 template<typename ItemType>
-class SyncQueue {
+class WriteSyncQueue {
 public:
-    void insert(ItemType&& item);
-    void insertRange(std::vector<ItemType>&& items);
+    virtual ~WriteSyncQueue() = default;
+    virtual void insert(ItemType&& item) = 0;
+    virtual void insertRange(std::vector<ItemType>&& items) = 0;
+};
 
-    std::vector<ItemType> getAll();
-    ItemType getFront();
+template<typename ItemType>
+class ReadSyncQueue {
+public:
+    virtual ~ReadSyncQueue() = default;
+    virtual std::vector<ItemType> getAll() = 0;
+    virtual ItemType getFront() = 0;
+};
+
+template<typename ItemType>
+class SyncQueue : public WriteSyncQueue<ItemType>, public ReadSyncQueue<ItemType> {
+public:
+    void insert(ItemType&& item) override;
+    void insertRange(std::vector<ItemType>&& items) override;
+
+    std::vector<ItemType> getAll() override;
+    ItemType getFront() override;
 
 private:
     std::mutex _mutex;
-
     std::deque<ItemType> _queue;
 };
 
@@ -51,7 +66,7 @@ template<typename ItemType>
 ItemType SyncQueue<ItemType>::getFront() {
     std::lock_guard<std::mutex> lg(_mutex);
 
-    auto frontItem = _queue.front();
+    auto frontItem = std::move(_queue.front());
     _queue.pop_front();
 
     return frontItem;

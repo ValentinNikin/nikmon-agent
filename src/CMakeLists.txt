@@ -13,12 +13,14 @@ add_library(
         app/ServiceLocator.h
         app/ServiceLocator.cpp
 
+        modules/ThreadedModule.h
+        modules/ThreadedModule.cpp
         modules/communication-module/Client.h
         modules/communication-module/Client.cpp
         modules/communication-module/CommunicationModule.h
         modules/communication-module/CommunicationModule.cpp
-        modules/ConfigurationModule.h
-        modules/ConfigurationModule.cpp
+        modules/configuration-module/ConfigurationModule.h
+        modules/configuration-module/ConfigurationModule.cpp
         modules/task-manager-module/TaskManagerModule.h
         modules/task-manager-module/TaskManagerModule.cpp
         modules/task-manager-module/Task.h
@@ -27,6 +29,13 @@ add_library(
         modules/task-manager-module/PeriodicTask.cpp
         modules/task-manager-module/SingleUseTask.h
         modules/task-manager-module/SingleUseTask.cpp
+
+        extractors/Extractor.h
+        extractors/Extractor.cpp
+        extractors/ExtractorFactory.h
+        extractors/ExtractorFactory.cpp
+        extractors/linux/LinuxExtractorFactory.h
+        extractors/linux/LinuxExtractorFactory.cpp
 
         types/api/Command.h
         types/api/Command.cpp

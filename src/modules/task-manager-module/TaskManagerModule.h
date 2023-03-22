@@ -12,45 +12,31 @@
 #include "types/api/CommandConfirmation.h"
 #include "types/api/TaskItem.h"
 
+#include "modules/ThreadedModule.h"
 #include "extractors/ExtractorFactory.h"
 #include "utils/SyncQueue.h"
 #include "Task.h"
 
-class TaskManagerModule {
-    using CommandPtr = std::unique_ptr<nikmon::types::Command>;
-    using CommandsQueue = SyncQueue<CommandPtr>;
-
-    using CommandConfirmationsQueue = SyncQueue<nikmon::types::CommandConfirmation>;
-
-    using TaskItemPtr = std::unique_ptr<nikmon::types::TaskItem>;
-    using TaskItemsQueue = SyncQueue<TaskItemPtr>;
+class TaskManagerModule : public ThreadedModule {
+    using Command = nikmon::types::Command;
+    using CommandConfirmation = nikmon::types::CommandConfirmation;
+    using TaskItem = nikmon::types::TaskItem;
 public:
     TaskManagerModule(const std::shared_ptr<ExtractorFactory>& extractorFactory);
-    ~TaskManagerModule();
 
-    bool start();
-    void stop();
-
-    std::vector<nikmon::types::CommandConfirmation> getConfirmations();
-    std::vector<TaskItemPtr> getTaskItems();
-    void addCommands(std::vector<CommandPtr>&& commands);
+    WriteSyncQueue<std::unique_ptr<Command>>* commandsQueue();
+    ReadSyncQueue<CommandConfirmation>* commandsConfirmationsQueue();
+    ReadSyncQueue<std::unique_ptr<TaskItem>>* taskItemsQueue();
 
 private:
-    std::unique_ptr<CommandsQueue> _commandsQueue;
-    std::unique_ptr<CommandConfirmationsQueue> _commandConfirmationsQueue;
-    std::unique_ptr<TaskItemsQueue> _taskItemsQueue;
+    void execute() override;
 private:
+    std::unique_ptr<SyncQueue<std::unique_ptr<Command>>> _commandsQueue;
+    std::unique_ptr<SyncQueue<CommandConfirmation>> _commandConfirmationsQueue;
+    std::unique_ptr<SyncQueue<std::unique_ptr<TaskItem>>> _taskItemsQueue;
+
     std::list<std::unique_ptr<Task>> _tasks;
     std::shared_ptr<ExtractorFactory> _extractorsFactory;
 private:
-    void threadFunc();
-    std::thread _thread;
-
-    std::atomic_bool _isOkToContinue;
-
-    int _heartbeat = 1000;
-    std::condition_variable _condVariable;
-    std::mutex _mutex;
-
     Poco::Logger& _logger;
 };

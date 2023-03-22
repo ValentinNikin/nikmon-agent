@@ -10,9 +10,10 @@
 
 #include "utils/SyncQueue.h"
 #include "types/api/TaskItem.h"
+#include "types/enums/TaskFrequency.h"
 
 class Task {
-    using TaskItemsQueue = SyncQueue<std::unique_ptr<nikmon::types::TaskItem>>;
+    using TaskItem = nikmon::types::TaskItem;
 public:
     Task(const std::string& id, std::unique_ptr<Extractor> extractor);
     virtual ~Task();
@@ -21,8 +22,10 @@ public:
     void stop();
 
     bool isFinished() const;
+    std::string getId() const;
+    std::string getKey() const;
 
-    TaskItemsQueue* readyItemsQueue();
+    ReadSyncQueue<std::unique_ptr<TaskItem>>* readyItemsQueue();
 
     void setExtractor(std::unique_ptr<Extractor> extractor);
 
@@ -39,7 +42,8 @@ private:
     std::unique_ptr<Extractor> _extractor;
     std::mutex _mutex;
 
-    std::unique_ptr<TaskItemsQueue> _itemsQueue;
+    std::unique_ptr<SyncQueue<std::unique_ptr<TaskItem>>> _itemsQueue;
 
     std::atomic_bool _isFinished = false;
+    TaskFrequency _frequency;
 };
