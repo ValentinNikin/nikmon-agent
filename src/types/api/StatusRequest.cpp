@@ -1,6 +1,6 @@
 #include "StatusRequest.h"
 
-void nikmon::types::to_json(nlohmann::json &j, const StatusRequest &r) {
+void nikmon::api::to_json(nlohmann::json &j, const StatusRequest &r) {
     j["id"] = r.id;
 
     auto confirmationsJsonArr = nlohmann::json::array();

@@ -11,7 +11,7 @@
 #include "types/api/StatusRequest.h"
 #include "types/api/StatusResponse.h"
 
-using namespace nikmon::types;
+using namespace nikmon::api;
 
 #define REGISTRATION_QUERY "/api/agent/registration"
 #define STATUS_QUERY "/api/agent/status"

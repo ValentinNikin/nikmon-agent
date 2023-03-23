@@ -1,6 +1,6 @@
 #include "Command.h"
 
-void nikmon::types::to_json(nlohmann::json& j, const Command& c) {
+void nikmon::api::to_json(nlohmann::json& j, const Command& c) {
     j["taskId"] = c.taskId;
     j["type"] = c.type;
 
@@ -11,7 +11,7 @@ void nikmon::types::to_json(nlohmann::json& j, const Command& c) {
     }
 }
 
-void nikmon::types::from_json(const nlohmann::json& j, Command& c) {
+void nikmon::api::from_json(const nlohmann::json& j, Command& c) {
     j.at("taskId").get_to(c.taskId);
     j.at("type").get_to(c.type);
 

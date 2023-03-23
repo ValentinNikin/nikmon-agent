@@ -31,11 +31,20 @@ add_library(
         modules/task-manager-module/SingleUseTask.cpp
 
         extractors/Extractor.h
-        extractors/Extractor.cpp
         extractors/ExtractorFactory.h
         extractors/ExtractorFactory.cpp
+        extractors/AgentPingExtractor.h
+        extractors/AgentPingExtractor.cpp
         extractors/linux/LinuxExtractorFactory.h
         extractors/linux/LinuxExtractorFactory.cpp
+        extractors/linux/SystemMachineInfoExtractor.h
+        extractors/linux/SystemMachineInfoExtractor.cpp
+        extractors/linux/SystemMemorySizeExtractor.h
+        extractors/linux/SystemMemorySizeExtractor.cpp
+        extractors/linux/SystemSwapSizeExtractor.h
+        extractors/linux/SystemSwapSizeExtractor.cpp
+        extractors/linux/sysinfo/MemoryInfoReader.h
+        extractors/linux/sysinfo/MemoryInfoReader.cpp
 
         types/api/Command.h
         types/api/Command.cpp

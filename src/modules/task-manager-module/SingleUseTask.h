@@ -4,7 +4,7 @@
 
 class SingleUseTask : public Task {
 public:
-    SingleUseTask(const std::string& id, std::unique_ptr<Extractor> extractor);
+    SingleUseTask(const std::string& id, const std::string& key, std::unique_ptr<Extractor> extractor);
 private:
     void threadFunc() override;
 };

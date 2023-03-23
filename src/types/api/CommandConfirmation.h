@@ -7,7 +7,7 @@
 #include "types/enums/CommandType.h"
 
 namespace nikmon {
-namespace types {
+namespace api {
 
 struct CommandConfirmation {
     std::string taskId;

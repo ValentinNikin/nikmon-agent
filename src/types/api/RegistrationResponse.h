@@ -5,7 +5,7 @@
 #include "nlohmann-json/json.hpp"
 
 namespace nikmon {
-namespace types {
+namespace api {
 
 struct RegistrationResponse {
     std::string id;

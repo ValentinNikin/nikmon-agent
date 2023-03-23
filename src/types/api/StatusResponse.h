@@ -7,7 +7,7 @@
 #include "Command.h"
 
 namespace nikmon {
-namespace types {
+namespace api {
 
 struct StatusResponse {
     int heartbeat;

@@ -1,6 +1,6 @@
 #include "StatusResponse.h"
 
-void nikmon::types::from_json(nlohmann::json &j, StatusResponse &response) {
+void nikmon::api::from_json(nlohmann::json &j, StatusResponse &response) {
     response.heartbeat = j.at("heartbeat").get<int>();
 
     for (const auto& cJson : j.at("commands")) {

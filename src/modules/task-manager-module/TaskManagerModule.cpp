@@ -3,9 +3,9 @@
 #include "SingleUseTask.h"
 #include "PeriodicTask.h"
 
-using Command = nikmon::types::Command;
-using CommandConfirmation = nikmon::types::CommandConfirmation;
-using TaskItem = nikmon::types::TaskItem;
+using Command = nikmon::api::Command;
+using CommandConfirmation = nikmon::api::CommandConfirmation;
+using TaskItem = nikmon::api::TaskItem;
 
 TaskManagerModule::TaskManagerModule(const std::shared_ptr<ExtractorFactory>& extractorFactory)
     : _commandsQueue(std::make_unique<SyncQueue<std::unique_ptr<Command>>>()),
@@ -20,29 +20,29 @@ void TaskManagerModule::execute() {
     // process commands from server
     auto commands = _commandsQueue->getAll();
     for (const auto& c : commands) {
-        nikmon::types::CommandConfirmation confirmation;
+        nikmon::api::CommandConfirmation confirmation;
         switch (c->type) {
             case CommandType::Add: {
                 auto extractor = _extractorsFactory->buildExtractor(c->payload.key);
                 if (extractor == nullptr) {
                     _logger.warning("Unable to apply 'Add' command. Unable to create extractor for key: %s", c->payload.key);
-                    confirmation = nikmon::types::CommandConfirmation(
+                    confirmation = nikmon::api::CommandConfirmation(
                             c->taskId, c->type, false, "Unable to create extractor");
                     break;
                 }
 
                 std::unique_ptr<Task> task;
                 if (c->payload.frequency == TaskFrequency::OnceTime) {
-                    task = std::make_unique<SingleUseTask>(c->taskId, std::move(extractor));
+                    task = std::make_unique<SingleUseTask>(c->taskId, c->payload.key, std::move(extractor));
                 }
                 else if (c->payload.frequency == TaskFrequency::MultipleTimes) {
-                    task = std::make_unique<PeriodicTask>(c->taskId, std::move(extractor), c->payload.delay);
+                    task = std::make_unique<PeriodicTask>(c->taskId, c->payload.key, std::move(extractor), c->payload.delay);
                 }
 
                 task->start();
                 _tasks.push_back(std::move(task));
 
-                confirmation = nikmon::types::CommandConfirmation(c->taskId, c->type);
+                confirmation = nikmon::api::CommandConfirmation(c->taskId, c->type);
 
                 break;
             }
@@ -57,17 +57,17 @@ void TaskManagerModule::execute() {
                             periodicTask->setExtractor(_extractorsFactory->buildExtractor(c->payload.key));
                         }
                         periodicTask->setDelay(c->payload.delay);
-                        confirmation = nikmon::types::CommandConfirmation(c->taskId, c->type);
+                        confirmation = nikmon::api::CommandConfirmation(c->taskId, c->type);
                     }
                     else {
                         _logger.warning("Unable to apply 'Change' command. 'Change' command supporting only by 'MultipleTimes' tasks");
-                        confirmation = nikmon::types::CommandConfirmation(
+                        confirmation = nikmon::api::CommandConfirmation(
                                 c->taskId, c->type, false, "'Change' command supporting only by 'MultipleTimes' tasks");
                     }
                 }
                 else {
                     _logger.warning("Unable to apply 'Change' command. Task with id " + c->taskId + " not found");
-                    confirmation = nikmon::types::CommandConfirmation(
+                    confirmation = nikmon::api::CommandConfirmation(
                             c->taskId, c->type, false, "Task with id " + c->taskId + " not found");
                 }
 
@@ -81,18 +81,18 @@ void TaskManagerModule::execute() {
                 if (taskIt != _tasks.end()) {
                     taskIt->get()->stop();
                     _tasks.erase(taskIt);
-                    confirmation = nikmon::types::CommandConfirmation(c->taskId, c->type);
+                    confirmation = nikmon::api::CommandConfirmation(c->taskId, c->type);
                 }
                 else {
                     _logger.warning("Unable to apply 'Cancel' command. Task with id " + c->taskId + " not found");
-                    confirmation = nikmon::types::CommandConfirmation(
+                    confirmation = nikmon::api::CommandConfirmation(
                             c->taskId, c->type, false, "Task with id " + c->taskId + " not found");
                 }
 
                 break;
             }
             default: {
-                confirmation = nikmon::types::CommandConfirmation(
+                confirmation = nikmon::api::CommandConfirmation(
                         c->taskId, c->type, false, "Unknown command type");
                 _logger.error("Unknown command type: %d", static_cast<int>(c->type));
             }

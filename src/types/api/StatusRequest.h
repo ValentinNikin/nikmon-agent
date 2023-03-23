@@ -8,7 +8,7 @@
 #include "TaskItem.h"
 
 namespace nikmon {
-namespace types {
+namespace api {
 
 struct StatusRequest {
     std::string id;

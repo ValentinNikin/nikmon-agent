@@ -7,7 +7,7 @@
 #include "types/enums/TaskResultStatus.h"
 
 namespace nikmon {
-namespace types {
+namespace api {
 
 struct TaskItem {
     std::string id;

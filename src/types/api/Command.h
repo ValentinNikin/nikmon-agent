@@ -9,7 +9,7 @@
 #include "types/enums/TaskFrequency.h"
 
 namespace nikmon {
-namespace types {
+namespace api {
 
 struct Payload {
     TaskFrequency frequency;

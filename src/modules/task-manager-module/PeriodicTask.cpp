@@ -1,7 +1,7 @@
 #include "PeriodicTask.h"
 
-PeriodicTask::PeriodicTask(const std::string& id, std::unique_ptr<Extractor> extractor, const long delay)
-    : Task(id, std::move(extractor)),
+PeriodicTask::PeriodicTask(const std::string& id, const std::string& key, std::unique_ptr<Extractor> extractor, const long delay)
+    : Task(id, key, std::move(extractor)),
     _delay(delay) {}
 
 void PeriodicTask::setDelay(const long delay) {

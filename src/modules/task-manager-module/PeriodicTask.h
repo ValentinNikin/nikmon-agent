@@ -4,7 +4,7 @@
 
 class PeriodicTask : public Task {
 public:
-    PeriodicTask(const std::string& id, std::unique_ptr<Extractor> extractor, const long delay);
+    PeriodicTask(const std::string& id, const std::string& key, std::unique_ptr<Extractor> extractor, const long delay);
 
     void setDelay(const long delay);
 private:

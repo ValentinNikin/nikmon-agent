@@ -13,9 +13,9 @@
 #include "types/enums/TaskFrequency.h"
 
 class Task {
-    using TaskItem = nikmon::types::TaskItem;
+    using TaskItem = nikmon::api::TaskItem;
 public:
-    Task(const std::string& id, std::unique_ptr<Extractor> extractor);
+    Task(const std::string& id, const std::string& key, std::unique_ptr<Extractor> extractor);
     virtual ~Task();
 
     void start();
@@ -39,6 +39,7 @@ private:
     std::thread _thread;
 
     std::string _id;
+    std::string _key;
     std::unique_ptr<Extractor> _extractor;
     std::mutex _mutex;
 

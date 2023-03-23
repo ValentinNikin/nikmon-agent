@@ -18,9 +18,9 @@
 #include "Task.h"
 
 class TaskManagerModule : public ThreadedModule {
-    using Command = nikmon::types::Command;
-    using CommandConfirmation = nikmon::types::CommandConfirmation;
-    using TaskItem = nikmon::types::TaskItem;
+    using Command = nikmon::api::Command;
+    using CommandConfirmation = nikmon::api::CommandConfirmation;
+    using TaskItem = nikmon::api::TaskItem;
 public:
     TaskManagerModule(const std::shared_ptr<ExtractorFactory>& extractorFactory);
 
