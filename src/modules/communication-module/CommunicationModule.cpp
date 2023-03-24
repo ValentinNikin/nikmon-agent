@@ -49,7 +49,7 @@ bool CommunicationModule::init() {
     }
 
     if (_configurationModule->hasKey("NetworkInterface")) {
-        _confParams.networkInterface = _configurationModule->getInt("NetworkInterface");
+        _confParams.networkInterface = _configurationModule->getString("NetworkInterface");
     }
     else {
         _logger.error("Unable to extract \"NetworkInterface\" parameter from config");

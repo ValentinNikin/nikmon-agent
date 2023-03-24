@@ -9,7 +9,7 @@
 
 namespace {
     Poco::Path getProjectConfigurationsPath() {
-        return Poco::Path().home().append(".config").append("nikmon-agent");
+        return Poco::Path().home().append(".config/").append("nikmon-agent");
     }
 
     std::string getConfigPath() {

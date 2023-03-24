@@ -73,13 +73,13 @@ ServerResponse Client::postRequest(const std::string& uri, const nlohmann::json&
             return ServerResponse::OK;
         }
         case 401:
-            _logger.error("Agent needs authorization: %d", responseStatus);
+            _logger.error("Agent needs authorization: %d", static_cast<int>(responseStatus));
             return ServerResponse::UNAUTHORIZED;
         case 500:
-            _logger.error("Internal server error: %d", responseStatus);
+            _logger.error("Internal server error: %d", static_cast<int>(responseStatus));
             return ServerResponse::INTERNAL_SERVER_ERROR;
         default:
-            _logger.error("Unknown status: %d", responseStatus);
+            _logger.error("Unknown status: %d", static_cast<int>(responseStatus));
             return ServerResponse::UNKNOWN;
     }
 

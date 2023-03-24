@@ -1,5 +1,8 @@
 #include "ConfigurationModule.h"
 
+ConfigurationModule::ConfigurationModule()
+    : _config(new Poco::Util::PropertyFileConfiguration()) {}
+
 void ConfigurationModule::loadConfig(const std::string& path) {
     _config->load(path);
 }

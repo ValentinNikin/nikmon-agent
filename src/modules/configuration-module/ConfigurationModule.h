@@ -6,7 +6,7 @@
 
 class ConfigurationModule {
 public:
-    ConfigurationModule() = default;
+    ConfigurationModule();
 
     void loadConfig(const std::string& path);
 
@@ -15,5 +15,5 @@ public:
     std::string getString(const std::string& key);
 
 private:
-    std::shared_ptr<Poco::Util::PropertyFileConfiguration> _config;
+    Poco::AutoPtr<Poco::Util::PropertyFileConfiguration> _config;
 };
