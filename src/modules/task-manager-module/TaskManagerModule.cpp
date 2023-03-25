@@ -13,7 +13,7 @@ TaskManagerModule::TaskManagerModule(const std::shared_ptr<ExtractorFactory>& ex
       _taskItemsQueue(std::make_unique<SyncQueue<std::unique_ptr<TaskItem>>>()),
       _extractorsFactory(extractorFactory),
       _logger(Poco::Logger::get("TaskManagerModule")) {
-    changeHeartbeat(3000);
+    changeHeartbeat(5000);
 }
 
 void TaskManagerModule::execute() {

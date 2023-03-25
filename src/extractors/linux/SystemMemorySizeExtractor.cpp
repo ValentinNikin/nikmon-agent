@@ -6,7 +6,7 @@ SystemMemorySizeExtractor::SystemMemorySizeExtractor(const MemorySizeType type)
     : _type(type) {}
 
 std::unique_ptr<nikmon::api::TaskItem> SystemMemorySizeExtractor::extract() {
-    std::unique_ptr<nikmon::api::TaskItem> taskItem;
+    auto taskItem = std::make_unique<nikmon::api::TaskItem>();
     try {
         MemoryInfoReader memoryInfoReader;
         auto memInfo = memoryInfoReader.read();

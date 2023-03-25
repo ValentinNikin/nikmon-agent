@@ -26,7 +26,7 @@ std::unique_ptr<Extractor> LinuxExtractorFactory::build_System_Memory_Extractor(
     auto closeBracketIdx = key.find_first_of(']');
 
     if (openBracketIdx != std::string::npos && closeBracketIdx != std::string::npos && openBracketIdx < closeBracketIdx) {
-        auto typeStr = key.substr(openBracketIdx, closeBracketIdx - openBracketIdx);
+        auto typeStr = key.substr(openBracketIdx + 1, closeBracketIdx - openBracketIdx - 1);
         MemorySizeType type {MemorySizeType::Unknown};
         if (typeStr == "Usage") {
             type = MemorySizeType::Usage;
@@ -52,7 +52,7 @@ std::unique_ptr<Extractor> LinuxExtractorFactory::build_System_Swap_Extractor(co
     auto closeBracketIdx = key.find_first_of(']');
 
     if (openBracketIdx != std::string::npos && closeBracketIdx != std::string::npos && openBracketIdx < closeBracketIdx) {
-        auto typeStr = key.substr(openBracketIdx, closeBracketIdx - openBracketIdx);
+        auto typeStr = key.substr(openBracketIdx + 1, closeBracketIdx - openBracketIdx - 1);
         SwapSizeType type {SwapSizeType::Unknown};
         if (typeStr == "Usage") {
             type = SwapSizeType::Usage;

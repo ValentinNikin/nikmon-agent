@@ -6,7 +6,7 @@ SystemSwapSizeExtractor::SystemSwapSizeExtractor(const SwapSizeType type)
         : _type(type) {}
 
 std::unique_ptr<nikmon::api::TaskItem> SystemSwapSizeExtractor::extract() {
-    std::unique_ptr<nikmon::api::TaskItem> taskItem;
+    auto taskItem = std::make_unique<nikmon::api::TaskItem>();
     try {
         MemoryInfoReader memoryInfoReader;
         auto memInfo = memoryInfoReader.read();

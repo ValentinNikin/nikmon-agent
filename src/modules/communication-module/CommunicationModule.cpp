@@ -105,10 +105,14 @@ void CommunicationModule::processRegisterRequest() {
 
     to_json(requestJson, request);
 
+    _logger.debug("Send \"registration\" request: %s", to_string(requestJson));
+
     auto res = _client->postRequest(REGISTRATION_QUERY, requestJson, responseJson);
     if (res == ServerResponse::OK) {
         RegistrationResponse response;
         from_json(responseJson, response);
+
+        _logger.debug("Receive \"registration\" response: %s", to_string(responseJson));
 
         _agentId = response.id;
 
@@ -132,10 +136,16 @@ void CommunicationModule::processStatusRequest() {
 
     to_json(requestJson, request);
 
+    _logger.debug("Send \"status\" request: %s", to_string(requestJson));
+
     auto res = _client->postRequest(STATUS_QUERY, requestJson, responseJson);
     if (res == ServerResponse::OK) {
         StatusResponse response;
         from_json(responseJson, response);
+
+        changeHeartbeat(response.heartbeat);
+
+        _logger.debug("Receive \"status\" response: %s", to_string(responseJson));
 
         _taskManagerModule->commandsQueue()->insertRange(std::move(response.commands));
     }
